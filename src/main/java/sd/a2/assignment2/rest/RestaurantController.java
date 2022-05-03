@@ -32,11 +32,6 @@ public class RestaurantController {
         return ResponseEntity.ok(restaurantService.findAll());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<RestaurantDTO> getRestaurant(@PathVariable final Long id) {
-        return ResponseEntity.ok(restaurantService.get(id));
-    }
-
     @GetMapping("/admin-{adminId}")
     public ResponseEntity<?> getRestaurantByAdminId(@PathVariable final Long adminId) {
         return ResponseEntity.ok(restaurantService.getFromAdmin(adminId));
@@ -46,19 +41,6 @@ public class RestaurantController {
     public ResponseEntity<?> createRestaurant(
             @RequestBody @Valid final RestaurantDTO restaurantDTO) {
         return new ResponseEntity<>(restaurantService.create(restaurantDTO), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> updateRestaurant(@PathVariable final Long id,
-            @RequestBody @Valid final RestaurantDTO restaurantDTO) {
-        restaurantService.update(id, restaurantDTO);
-        return ResponseEntity.ok().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRestaurant(@PathVariable final Long id) {
-        restaurantService.delete(id);
-        return ResponseEntity.noContent().build();
     }
 
 }

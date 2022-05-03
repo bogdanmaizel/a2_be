@@ -22,18 +22,7 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDTO> getUser(@PathVariable final Long id) {
-        return ResponseEntity.ok(userService.get(id));
-    }
-
     @PostMapping("/login-admin")
-    @CrossOrigin
     public @ResponseBody ResponseEntity<?> loginAdmin(@RequestBody @Valid final UserDTO userDTO) {
         RestaurantAdminDTO login = userService.checkCredentialsAdmin(userDTO);
         if (login != null)
@@ -43,7 +32,6 @@ public class UserController {
     }
 
     @PostMapping("/login-customer")
-    @CrossOrigin
     public @ResponseBody ResponseEntity<?> loginCustomer(@RequestBody @Valid final UserDTO userDTO) {
         CustomerDTO login = userService.checkCredentialsCustomer(userDTO);
         if (login !=null)
