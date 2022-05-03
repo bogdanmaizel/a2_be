@@ -1,5 +1,7 @@
 package sd.a2.assignment2.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -17,19 +19,18 @@ import sd.a2.assignment2.repos.UserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Handles various logic and operations concerning the authentication methods.
+ */
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final RestaurantAdminRepository restaurantAdminRepository;
-
-    public UserService(final UserRepository userRepository, CustomerRepository customerRepository, RestaurantAdminRepository restaurantAdminRepository) {
-        this.userRepository = userRepository;
-        this.customerRepository = customerRepository;
-        this.restaurantAdminRepository = restaurantAdminRepository;
-    }
 
     public List<UserDTO> findAll() {
         return userRepository.findAll()
@@ -38,32 +39,58 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Handle admin user login.
+     * @param userDTO User (admin) data.
+     * @return restaurant admin DTO.
+     */
+
     public RestaurantAdminDTO checkCredentialsAdmin(final UserDTO userDTO) {
+        log.info("Checking {}'s admin credentials", userDTO.getUsername());
         final User user = userRepository.findByUsername(userDTO.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("User {} not found", userDTO.getUsername());
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+                });
         final RestaurantAdminDTO restaurantAdminDTO = new RestaurantAdminDTO();
-        if (user.getAdmin() == null)
+        if (user.getAdmin() == null) {
+            log.warn("User not admin");
             throw new RuntimeException("User not admin");
+        }
         if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword())) {
             restaurantAdminDTO.setUser(user.getAdmin().getId());
             restaurantAdminDTO.setRestaurant(
                     user.getAdmin().getRestaurant() == null ? null : user.getAdmin().getRestaurant().getId());
             return restaurantAdminDTO;
         }
+        log.warn("Incorrect credentials");
             return null;
     }
 
+    /**
+     * Handle customer user login.
+     * @param userDTO User (customer) data.
+     * @return Customer DTO.
+     */
+
     public CustomerDTO checkCredentialsCustomer(final UserDTO userDTO) {
-        //System.out.println(userDTO.getUsername() + "\t" + userDTO.getPassword());
+        log.info("Checking {}'s customer credentials", userDTO.getUsername());
         final User user = userRepository.findByUsername(userDTO.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("User {} not found", userDTO.getUsername());
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+                });
         final CustomerDTO customerDTO = new CustomerDTO();
-            if (user.getCustomer() == null)
+            if (user.getCustomer() == null) {
+                log.warn("User not customer");
                 throw new RuntimeException("User not customer");
+            }
             if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword())) {
                 customerDTO.setCustomer(user.getCustomer().getId());
+                return customerDTO;
             }
-        return customerDTO;
+        log.warn("Incorrect credentials");
+        return null;
     }
 
     public UserDTO get(final Long id) {
@@ -72,13 +99,14 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    public Long create(final UserDTO userDTO) {
-        final User user = new User();
-        mapToEntity(userDTO, user);
-        return userRepository.save(user).getId();
-    }
+    /**
+     * Creates an admin user directly.
+     * @param userDTO User details.
+     * @return The admin ID.
+     */
 
     public Long createAdmin(final UserDTO userDTO) {
+        log.info("Creating admin account with username {}", userDTO.getUsername());
         final User user = new User();
         mapToEntity(userDTO, user);
         final RestaurantAdmin restaurantAdmin = new RestaurantAdmin();
@@ -87,7 +115,14 @@ public class UserService {
         return restaurantAdminRepository.save(restaurantAdmin).getId();
     }
 
+    /**
+     * Creates a customer user directly.
+     * @param userDTO User details.
+     * @return The customer ID.
+     */
+
     public Long createCustomer(final UserDTO userDTO) {
+        log.info("Creating customer account with username {}", userDTO.getUsername());
         final User user = new User();
         mapToEntity(userDTO, user);
         final Customer customer = new Customer();
@@ -107,13 +142,29 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
+    /**
+     * Maps user entity to DTO.
+     * @param user The entity.
+     * @param userDTO The resulting DTO.
+     * @return The resulting DTO.
+     */
+
     private UserDTO mapToDTO(final User user, final UserDTO userDTO) {
+        log.info("Mapping user entity {} to DTO", user.getUsername());
         userDTO.setUsername(user.getUsername());
         userDTO.setPassword(user.getPassword());
         return userDTO;
     }
 
+    /**
+     * Maps a user DTO to entity.
+     * @param userDTO The DTO.
+     * @param user The resulting entity.
+     * @return The resulting entity.
+     */
+
     private User mapToEntity(final UserDTO userDTO, final User user) {
+        log.info("Mapping user DTO {} to entity", userDTO.getUsername());
         user.setUsername(userDTO.getUsername());
         user.setPassword(BCrypt.hashpw(userDTO.getPassword(), BCrypt.gensalt()));
         return user;
