@@ -3,7 +3,12 @@ package sd.a2.assignment2.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import sd.a2.assignment2.domain.Customer;
@@ -16,6 +21,8 @@ import sd.a2.assignment2.repos.CustomerRepository;
 import sd.a2.assignment2.repos.RestaurantAdminRepository;
 import sd.a2.assignment2.repos.UserRepository;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,11 +33,26 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final RestaurantAdminRepository restaurantAdminRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    log.warn("User {} not found", username);
+                    return new UsernameNotFoundException("User not found");
+                });
+        log.info("User {} found", username);
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        if (user.getAdmin() != null) authorities.add(new SimpleGrantedAuthority("ADMIN"));
+        if (user.getCustomer() != null) authorities.add(new SimpleGrantedAuthority("CUSTOMER"));
+        return new org.springframework.security.core.userdetails.User(user.getUsername(),user.getPassword(), authorities);
+    }
 
     public List<UserDTO> findAll() {
         return userRepository.findAll()
@@ -57,7 +79,8 @@ public class UserService {
             log.warn("User not admin");
             throw new RuntimeException("User not admin");
         }
-        if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword())) {
+        if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword()) ||
+                passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
             restaurantAdminDTO.setUser(user.getAdmin().getId());
             restaurantAdminDTO.setRestaurant(
                     user.getAdmin().getRestaurant() == null ? null : user.getAdmin().getRestaurant().getId());
@@ -85,7 +108,8 @@ public class UserService {
                 log.warn("User not customer");
                 throw new RuntimeException("User not customer");
             }
-            if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword())) {
+            if (BCrypt.checkpw(userDTO.getPassword(), user.getPassword()) ||
+                    passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
                 customerDTO.setCustomer(user.getCustomer().getId());
                 return customerDTO;
             }
@@ -166,8 +190,9 @@ public class UserService {
     private User mapToEntity(final UserDTO userDTO, final User user) {
         log.info("Mapping user DTO {} to entity", userDTO.getUsername());
         user.setUsername(userDTO.getUsername());
-        user.setPassword(BCrypt.hashpw(userDTO.getPassword(), BCrypt.gensalt()));
+        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         return user;
     }
+
 
 }
