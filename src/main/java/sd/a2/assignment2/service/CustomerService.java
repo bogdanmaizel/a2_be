@@ -34,7 +34,6 @@ public class CustomerService {
     }
 
     /**
-     * Returns customer entity based on ID.
      * @param id The customer ID.
      * @return A DTO with the customer information.
      */
