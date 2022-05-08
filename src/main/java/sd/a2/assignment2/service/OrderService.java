@@ -36,18 +36,6 @@ public class OrderService {
     private final FoodRepository foodRepository;
 
     /**
-     * @return A list of all orders
-     */
-
-    public List<OrderDTO> findAll() {
-        log.info("Fetching all orders");
-        return orderRepository.findAll()
-                .stream()
-                .map(order -> mapToDTO(order, new OrderDTO()))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * @param id The customer ID.
      * @return A list of all orders made by the specified customer.
      */
@@ -71,12 +59,6 @@ public class OrderService {
                 .stream()
                 .map(order -> mapToDTO(order, new OrderDTO()))
                 .collect(Collectors.toList());
-    }
-
-    public OrderDTO get(final Long id) {
-        return orderRepository.findById(id)
-                .map(order -> mapToDTO(order, new OrderDTO()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -121,10 +103,6 @@ public class OrderService {
         }
         log.info("Order {} new status -> {}", id, order.getStatus().toString());
         orderRepository.save(order);
-    }
-
-    public void delete(final Long id) {
-        orderRepository.deleteById(id);
     }
 
     /**

@@ -13,7 +13,7 @@ import javax.validation.Valid;
 
 
 @RestController
-@RequestMapping(value = "/api/foods", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/foods")
 @RequiredArgsConstructor
 @Slf4j
 public class FoodController {

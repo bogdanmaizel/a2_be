@@ -3,6 +3,7 @@ package sd.a2.assignment2.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
@@ -27,10 +29,30 @@ public class AppWebSecurityConfigurer extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable();
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(authenticationManagerBean());
+        authenticationFilter.setFilterProcessesUrl("/api/users/login");
+
+
+        http.cors().and().csrf().disable();
         http.sessionManagement().sessionCreationPolicy(STATELESS);
-        http.authorizeRequests().anyRequest().permitAll();
-        http.addFilter(new AuthFilter(authenticationManagerBean()));
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/users/**").permitAll();
+
+        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/restaurants").hasAuthority("CUSTOMER");
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/restaurants").hasAuthority("ADMIN");
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/restaurants/**").hasAuthority("ADMIN");
+
+        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/foods/menu-**").hasAnyAuthority("ADMIN","CUSTOMER");
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/foods/").hasAuthority("ADMIN");
+
+        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/orders/from-restaurant/**").hasAuthority("ADMIN");
+        http.authorizeRequests().antMatchers(HttpMethod.GET, "/api/orders/from-customer/**").hasAuthority("CUSTOMER");
+        http.authorizeRequests().antMatchers(HttpMethod.POST, "/api/orders").hasAuthority("ADMIN");
+        http.authorizeRequests().antMatchers(HttpMethod.PUT, "/api/orders/**").hasAuthority("ADMIN");
+
+        http.authorizeRequests().anyRequest().authenticated();
+
+        http.addFilter(authenticationFilter);
+        http.addFilterBefore(new AuthorisationFilter(), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean

@@ -44,21 +44,14 @@ public class UserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    log.warn("User {} not found", username);
-                    return new UsernameNotFoundException("User not found");
+                    log.warn("User {} not found for TOKEN", username);
+                    return new UsernameNotFoundException("User not found for TOKEN");
                 });
         log.info("User {} found", username);
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (user.getAdmin() != null) authorities.add(new SimpleGrantedAuthority("ADMIN"));
         if (user.getCustomer() != null) authorities.add(new SimpleGrantedAuthority("CUSTOMER"));
         return new org.springframework.security.core.userdetails.User(user.getUsername(),user.getPassword(), authorities);
-    }
-
-    public List<UserDTO> findAll() {
-        return userRepository.findAll()
-                .stream()
-                .map(user -> mapToDTO(user, new UserDTO()))
-                .collect(Collectors.toList());
     }
 
     /**
@@ -117,12 +110,6 @@ public class UserService implements UserDetailsService {
         return null;
     }
 
-    public UserDTO get(final Long id) {
-        return userRepository.findById(id)
-                .map(user -> mapToDTO(user, new UserDTO()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-    }
-
     /**
      * Creates an admin user directly.
      * @param userDTO User details.
@@ -153,17 +140,6 @@ public class UserService implements UserDetailsService {
         customer.setUser(user);
         userRepository.save(user);
         return customerRepository.save(customer).getId();
-    }
-
-    public void update(final Long id, final UserDTO userDTO) {
-        final User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        mapToEntity(userDTO, user);
-        userRepository.save(user);
-    }
-
-    public void delete(final Long id) {
-        userRepository.deleteById(id);
     }
 
     /**

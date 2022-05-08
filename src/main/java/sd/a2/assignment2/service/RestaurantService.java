@@ -40,22 +40,6 @@ public class RestaurantService {
     }
 
     /**
-     * Fetch a single restaurant.
-     * @param id The restaurant ID.
-     * @return The referenced restaurant.
-     */
-
-    public RestaurantDTO get(final Long id) {
-        log.info("Fetching restaurant {}", id);
-        return restaurantRepository.findById(id)
-                .map(restaurant -> mapToDTO(restaurant, new RestaurantDTO()))
-                .orElseThrow(() -> {
-                    log.warn("Restaurant with ID {} not found", id);
-                    return new ResponseStatusException(HttpStatus.NOT_FOUND, "Restaurant not found");
-                });
-    }
-
-    /**
      * @param adminId The admin's ID.
      * @return The corresponding restaurant.
      */
@@ -82,17 +66,6 @@ public class RestaurantService {
         mapToEntity(restaurantDTO, restaurant);
         restaurantDTO.setId(restaurantRepository.save(restaurant).getId());
         return restaurantDTO;
-    }
-
-    public void update(final Long id, final RestaurantDTO restaurantDTO) {
-        final Restaurant restaurant = restaurantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        mapToEntity(restaurantDTO, restaurant);
-        restaurantRepository.save(restaurant);
-    }
-
-    public void delete(final Long id) {
-        restaurantRepository.deleteById(id);
     }
 
     /**

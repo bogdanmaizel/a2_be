@@ -1,12 +1,15 @@
 package sd.a2.assignment2.rest;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import sd.a2.assignment2.model.CustomerDTO;
 import sd.a2.assignment2.model.RestaurantAdminDTO;
@@ -19,7 +22,6 @@ import sd.a2.assignment2.service.UserService;
 @RequiredArgsConstructor
 @Slf4j
 public class UserController {
-
     private final UserService userService;
 
     @PostMapping("/login-admin")
@@ -28,7 +30,7 @@ public class UserController {
         RestaurantAdminDTO login = userService.checkCredentialsAdmin(userDTO);
         if (login != null) {
             log.info("API access - Login for {} successful", userDTO.getUsername());
-            return ResponseEntity.ok(login);
+            return new ResponseEntity<>(login, HttpStatus.OK);
         }
         else {
             log.warn("API access - Login for {} failed", userDTO.getUsername());

@@ -27,19 +27,6 @@ public class FoodService {
     private final RestaurantRepository restaurantRepository;
 
     /**
-     * Fetch all the foods currently in the database.
-     * @return A list of all the foods.
-     */
-
-    public List<FoodDTO> findAll() {
-        log.info("Fetching food list");
-        return foodRepository.findAll()
-                .stream()
-                .map(food -> mapToDTO(food, new FoodDTO()))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Search for a food by its ID.
      * @param id The food ID.
      * @return The corresponding food, mapped to a DTO.
@@ -68,6 +55,10 @@ public class FoodService {
                 .collect(Collectors.toList());
     }
 
+//    public  createMenuPDF(final Long id) {
+//
+//    }
+
     /**
      * Creates a new food entity, based on the parameters given in the DTO.
      * @param foodDTO the DTO containing the information about the food object.
@@ -86,17 +77,6 @@ public class FoodService {
         mapToEntity(foodDTO, food);
         foodDTO.setId(foodRepository.save(food).getId());
         return foodDTO;
-    }
-
-    public void update(final Long id, final FoodDTO foodDTO) {
-        final Food food = foodRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        mapToEntity(foodDTO, food);
-        foodRepository.save(food);
-    }
-
-    public void delete(final Long id) {
-        foodRepository.deleteById(id);
     }
 
     /**
